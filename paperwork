@@ -1,0 +1,417 @@
+#! /usr/bin/python -tt
+
+# paperwork
+
+# Copyright 2012 Richard Fearn
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+API_URL_PREFIX = "https://www.instapaper.com/api/1"
+
+LIST_FOLDERS = "/folders/list"
+ADD_FOLDER   = "/folders/add"
+DELETE_FOLDER = "/folders/delete"
+LIST_BOOKMARKS = "/bookmarks/list"
+DELETE_BOOKMARK = "/bookmarks/delete"
+MOVE_BOOKMARK  = "/bookmarks/move"
+OAUTH_ACCESS_TOKEN = "/oauth/access_token"
+
+PROGRAM_NAME = "paperwork"
+
+import oauth2
+import urllib
+import urlparse
+import json
+import datetime
+import sys
+import optparse
+import ConfigParser
+import os
+import getpass
+
+CONFIG_FILE = os.path.expanduser("~/.paperworkrc")
+
+RED   = "\033[1;31m"
+GREEN = "\033[1;32m"
+BLACK = "\033[1;m"
+
+USAGE = """
+usage: %(red)s%(progname)s%(black)s <action> <action args>
+
+where <action> can be:
+
+%(green)sfolders%(black)s
+    show list of folders
+
+%(green)sarticles%(black)s
+    dump URLs of all articles in all folders
+
+%(green)scount%(black)s
+    show list of folders (including unread) with article count
+
+%(green)sexport%(black)s
+    dump folders and articles as XML
+
+%(green)sbatch%(black)s
+    move max. 20 articles into a folder named with today's date
+
+%(green)semptyfolder%(black)s <folder name>
+    delete articles in the specified folder
+
+%(green)swipefolder%(black)s <folder name>
+    delete articles in the specified folder, and delete the folder
+
+%(green)sauth/authenticate%(black)s -u <username>
+    authenticate as the specified user
+
+%(green)sunauth/unauthenticate%(black)s -u <username>
+    remove authentication tokens for the specified user
+""" % {"progname": PROGRAM_NAME, "red": RED, "green": GREEN, "black": BLACK}
+
+################################################################################
+
+parser = optparse.OptionParser()
+parser.add_option("-n", "--dry-run", action="store_true", default=False, help="perform a trial run")
+parser.add_option("-q", "--quiet",   action="store_true", default=False, help="suppress non-error messages")
+parser.add_option("-u", "--username", help="username")
+(options, args) = parser.parse_args()
+
+if len(args) == 0:
+	print >>sys.stderr, USAGE
+	sys.exit(1)
+
+command = args[0]
+
+################################################################################
+
+def save_config(config):
+	with open(CONFIG_FILE, "wb") as configfile:
+		config.write(configfile)
+
+# read config
+config = ConfigParser.RawConfigParser()
+config.read(CONFIG_FILE)
+
+PAPERWORK_SECTION = "paperwork"
+
+# add [paperwork] section, if missing
+if not config.has_section(PAPERWORK_SECTION):
+	config.add_section(PAPERWORK_SECTION)
+	save_config(config)
+
+key_or_secret_missing = False
+
+if not config.has_option(PAPERWORK_SECTION, "consumer_key"):
+	key_or_secret_missing = True
+
+if not config.has_option(PAPERWORK_SECTION, "consumer_secret"):
+	key_or_secret_missing = True
+
+if key_or_secret_missing:
+	print >>sys.stderr, "%s: consumer key or secret missing in .paperworkrc file" % PROGRAM_NAME
+	sys.exit(1)
+
+consumer_key = config.get(PAPERWORK_SECTION, "consumer_key")
+consumer_secret = config.get(PAPERWORK_SECTION, "consumer_secret")
+
+consumer = oauth2.Consumer(consumer_key, consumer_secret)
+
+################################################################################
+
+if command in ("auth", "authenticate"):
+	
+	if not options.username:
+		print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
+		sys.exit(1)
+	
+	if config.has_section(options.username):
+		print >>sys.stderr, "%s: %s already authenticated" % (PROGRAM_NAME, options.username)
+		sys.exit(1)
+	
+	prompt = "enter password for %s: " % options.username
+	password = getpass.getpass(prompt=prompt)
+	
+	auth_client = oauth2.Client(consumer)
+	
+	(response, data) = auth_client.request(API_URL_PREFIX + OAUTH_ACCESS_TOKEN, "POST", urllib.urlencode({
+		"x_auth_mode": "client_auth",
+		"x_auth_username": options.username,
+		"x_auth_password": password
+		}))
+	
+	if response["status"] in ("400", "401"):
+		print >>sys.stderr, "%s: incorrect password" % PROGRAM_NAME
+		sys.exit(1)
+	
+	elif response["status"] != "200":
+		print >>sys.stderr, "%s: invalid response (%s)" % (PROGRAM_NAME, response["status"])
+		sys.exit(1)
+	
+	if not options.quiet:
+		print "%s successfully authenticated" % options.username
+	
+	token = dict(urlparse.parse_qsl(data))
+	(token, token_secret) = (token["oauth_token"], token["oauth_token_secret"])
+	
+	# add token/secret to config
+	config.add_section(options.username)
+	config.set(options.username, "token", token)
+	config.set(options.username, "token_secret", token_secret)
+	save_config(config)
+	
+	sys.exit(0)
+
+################################################################################
+
+# all the following commands require an account, so complain if there aren't any
+accounts = [n for n in config.sections() if n != PAPERWORK_SECTION]
+if not accounts:
+	print >>sys.stderr, "%s: no accounts" % PROGRAM_NAME
+	sys.exit(1)
+
+# find a default username, if no username was specified
+if not options.username:
+	options.username = accounts[0]
+
+################################################################################
+
+if command in ("unauth", "unauthenticate"):
+	
+	if not options.username:
+		print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
+		sys.exit(1)
+	
+	if not config.has_section(options.username):
+		print >>sys.stderr, "%s: unknown username %s" % (PROGRAM_NAME, options.username)
+		sys.exit(1)
+	
+	# remove token/secret from config
+	config.remove_section(options.username)
+	save_config(config)
+	
+	sys.exit(0)
+
+################################################################################
+
+token = config.get(options.username, "token")
+token_secret = config.get(options.username, "token_secret")
+token = oauth2.Token(token, token_secret)
+
+client = oauth2.Client(consumer, token)
+
+################################################################################
+
+if command == "folders":
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	for f in folders:
+		print f["title"]
+
+################################################################################
+
+if command == "articles":
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders.insert(0, {"folder_id": "unread"})
+	for f in folders:
+		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+			"limit": 500,
+			"folder_id": f["folder_id"]
+			}))
+		bookmarks = json.loads(data)
+		for b in bookmarks:
+			if b["type"] == "bookmark":
+				print b["url"]
+
+################################################################################
+
+if command == "count":
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders.insert(0, {"folder_id": "unread", "title": "unread"})
+	for f in folders:
+		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+			"limit": 500,
+			"folder_id": f["folder_id"]
+			}))
+		bookmarks = json.loads(data)
+		bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
+		print "%d\t%s" % (len(bookmarks), f["title"])
+
+################################################################################
+
+if command == "export":
+	from xml.dom.minidom import getDOMImplementation
+	impl = getDOMImplementation()
+	newdoc = impl.createDocument(None, "bookmarks", None)
+	top_element = newdoc.documentElement
+	
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders.insert(0, {"folder_id": "unread", "title": "unread"})
+	for f in folders:
+		folder_el = newdoc.createElement("folder")
+		folder_el.setAttribute("id", str(f["folder_id"]))
+		folder_el.setAttribute("title", f["title"])
+		top_element.appendChild(folder_el)
+		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+			"limit": 500,
+			"folder_id": f["folder_id"]
+			}))
+		bookmarks = json.loads(data)
+		bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
+		bookmark_time_and_id = lambda b: (b["time"], b["bookmark_id"])
+		bookmarks.sort(key=bookmark_time_and_id, reverse=True)
+		for b in bookmarks:
+			bookmark_el = newdoc.createElement("bookmark")
+			bookmark_el.setAttribute("id", str(b["bookmark_id"]))
+			bookmark_el.setAttribute("url", b["url"])
+			bookmark_el.setAttribute("title", b["title"])
+			folder_el.appendChild(bookmark_el)
+	print newdoc.toprettyxml().encode("utf-8")
+
+################################################################################
+
+if command == "batch":
+	
+	# get bookmarks in "Unread" folder
+	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+		"limit": 500,
+		"folder_id": "unread"
+		}))
+	bookmarks = json.loads(data)
+	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+	
+	# exit if there are no bookmarks to batch
+	if len(bookmarks) == 0:
+		print >>sys.stderr, "%s: no bookmarks to batch" % PROGRAM_NAME
+		sys.exit(1)
+	
+	# get list of current folder names
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folder_names = [f["title"] for f in folders]
+	
+	# determine name for new folder, based on today's date
+	now = datetime.datetime.now()
+	ymd = now.strftime("%Y-%m-%d")
+	letter = "a"
+	while (ymd + "-" + letter) in folder_names:
+		letter = chr(ord(letter) + 1)
+	new_folder_name = ymd + "-" + letter
+	
+	# create new folder
+	if not options.quiet:
+		print "adding new folder '%s'" % new_folder_name
+	if not options.dry_run:
+		(response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
+			"title": new_folder_name
+			}))
+		data = json.loads(data)
+		new_folder_id = data[0]["folder_id"]
+		if not options.quiet:
+			print "done (folder_id=%s)" % new_folder_id
+	
+	# move 20 oldest bookmarks into new folder
+	bookmarks = list(reversed(bookmarks))
+	bookmarks = bookmarks[0:20]
+	for (i, b) in enumerate(bookmarks):
+		if not options.quiet:
+			print "moving (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+		if not options.dry_run:
+			(response, data) = client.request(API_URL_PREFIX + MOVE_BOOKMARK, "POST", urllib.urlencode({
+				"bookmark_id": b["bookmark_id"],
+				"folder_id": new_folder_id
+				}))
+	
+	if not options.quiet:
+		print "done"
+
+################################################################################
+
+if command == "emptyfolder":
+	
+	foldername = args[1]
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	
+	# check specified folder exists
+	if foldername not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+		sys.exit(1)
+	
+	folder_id = folders[foldername]
+	
+	# get bookmarks in folder
+	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+		"limit": 500,
+		"folder_id": folder_id
+		}))
+	bookmarks = json.loads(data)
+	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+	
+	# delete bookmarks
+	for (i, b) in enumerate(bookmarks):
+		print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+		if not options.dry_run:
+			(response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
+				"bookmark_id": b["bookmark_id"]
+				}))
+	
+	print "done"
+
+################################################################################
+
+if command == "wipefolder":
+	
+	foldername = args[1]
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	
+	# check specified folder exists
+	if foldername not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+		sys.exit(1)
+	
+	folder_id = folders[foldername]
+	
+	# get bookmarks in folder
+	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+		"limit": 500,
+		"folder_id": folder_id
+		}))
+	bookmarks = json.loads(data)
+	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+	
+	# delete bookmarks
+	for (i, b) in enumerate(bookmarks):
+		print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+		if not options.dry_run:
+			(response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
+				"bookmark_id": b["bookmark_id"]
+				}))
+	
+	# delete folder
+	print "deleting folder '%s'" % foldername
+	if not options.dry_run:
+		(response, data) = client.request(API_URL_PREFIX + DELETE_FOLDER, "POST", urllib.urlencode({
+			"folder_id": folder_id
+			}))
+	
+	print "done"
