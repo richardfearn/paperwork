@@ -43,7 +43,7 @@ CONFIG_FILE = os.path.expanduser("~/.paperworkrc")
 
 RED   = "\033[1;31m"
 GREEN = "\033[1;32m"
-BLACK = "\033[1;m"
+BLACK = "\033[0m"
 
 USAGE = """
 usage: %(red)s%(progname)s%(black)s <action> <action args>
