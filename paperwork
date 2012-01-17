@@ -41,42 +41,42 @@ import getpass
 
 CONFIG_FILE = os.path.expanduser("~/.paperworkrc")
 
-RED   = "\033[1;31m"
-GREEN = "\033[1;32m"
-BLACK = "\033[0m"
+RED       = "\033[1;31m"
+GREEN     = "\033[1;32m"
+NO_COLOUR = "\033[0m"
 
 USAGE = """
-usage: %(red)s%(progname)s%(black)s <action> <action args>
+usage: %(red)s%(progname)s%(nocolour)s <action> <action args>
 
 where <action> can be:
 
-%(green)sfolders%(black)s
+%(green)sfolders%(nocolour)s
     show list of folders
 
-%(green)sarticles%(black)s
+%(green)sarticles%(nocolour)s
     dump URLs of all articles in all folders
 
-%(green)scount%(black)s
+%(green)scount%(nocolour)s
     show list of folders (including unread) with article count
 
-%(green)sexport%(black)s
+%(green)sexport%(nocolour)s
     dump folders and articles as XML
 
-%(green)sbatch%(black)s
+%(green)sbatch%(nocolour)s
     move max. 20 articles into a folder named with today's date
 
-%(green)semptyfolder%(black)s <folder name>
+%(green)semptyfolder%(nocolour)s <folder name>
     delete articles in the specified folder
 
-%(green)swipefolder%(black)s <folder name>
+%(green)swipefolder%(nocolour)s <folder name>
     delete articles in the specified folder, and delete the folder
 
-%(green)sauth/authenticate%(black)s -u <username>
+%(green)sauth/authenticate%(nocolour)s -u <username>
     authenticate as the specified user
 
-%(green)sunauth/unauthenticate%(black)s -u <username>
+%(green)sunauth/unauthenticate%(nocolour)s -u <username>
     remove authentication tokens for the specified user
-""" % {"progname": PROGRAM_NAME, "red": RED, "green": GREEN, "black": BLACK}
+""" % {"progname": PROGRAM_NAME, "red": RED, "green": GREEN, "nocolour": NO_COLOUR}
 
 ################################################################################
 
