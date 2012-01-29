@@ -297,6 +297,9 @@ if command == "batch":
 		print >>sys.stderr, "%s: no bookmarks to batch" % PROGRAM_NAME
 		sys.exit(1)
 	
+	if not options.quiet:
+		print "%d bookmark(s) in 'Read Later' folder" % len(bookmarks)
+	
 	# get list of current folder names
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
@@ -324,10 +327,10 @@ if command == "batch":
 	
 	# move 20 oldest bookmarks into new folder
 	bookmarks = list(reversed(bookmarks))
-	bookmarks = bookmarks[0:20]
-	for (i, b) in enumerate(bookmarks):
+	bookmarks_to_move = bookmarks[0:20]
+	for (i, b) in enumerate(bookmarks_to_move):
 		if not options.quiet:
-			print "moving (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+			print "moving (%d of %d): %s" % (i+1, len(bookmarks_to_move), b["title"].encode("utf-8"))
 		if not options.dry_run:
 			(response, data) = client.request(API_URL_PREFIX + MOVE_BOOKMARK, "POST", urllib.urlencode({
 				"bookmark_id": b["bookmark_id"],
@@ -335,6 +338,7 @@ if command == "batch":
 				}))
 	
 	if not options.quiet:
+		print "%d bookmark(s) remaining in 'Read Later' folder" % (len(bookmarks) - len(bookmarks_to_move))
 		print "done"
 
 ################################################################################
