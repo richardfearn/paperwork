@@ -1,0 +1,15 @@
+#! /usr/bin/python -tt
+
+import sys
+from xml.dom import minidom
+
+filename = sys.argv[1]
+
+get_url = lambda e: e.getAttribute("url")
+
+dom = minidom.parse(filename)
+bookmark_elements = dom.getElementsByTagName("bookmark")
+bookmarks = map(get_url, bookmark_elements)
+
+for b in bookmarks:
+	print b
