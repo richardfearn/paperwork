@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+BATCH_SIZE = 20
+
 API_URL_PREFIX = "https://www.instapaper.com/api/1"
 
 LIST_FOLDERS = "/folders/list"
@@ -327,7 +329,7 @@ if command == "batch":
 	
 	# move 20 oldest bookmarks into new folder
 	bookmarks = list(reversed(bookmarks))
-	bookmarks_to_move = bookmarks[0:20]
+	bookmarks_to_move = bookmarks[0:BATCH_SIZE]
 	for (i, b) in enumerate(bookmarks_to_move):
 		if not options.quiet:
 			print "moving (%d of %d): %s" % (i+1, len(bookmarks_to_move), b["title"].encode("utf-8"))
