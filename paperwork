@@ -278,6 +278,7 @@ if command == "export":
 		for b in bookmarks:
 			bookmark_el = newdoc.createElement("bookmark")
 			bookmark_el.setAttribute("id", str(b["bookmark_id"]))
+			bookmark_el.setAttribute("time", str(b["time"]))
 			bookmark_el.setAttribute("url", b["url"])
 			bookmark_el.setAttribute("title", b["title"])
 			folder_el.appendChild(bookmark_el)
