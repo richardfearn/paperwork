@@ -262,6 +262,7 @@ if command == "export":
 	folders = json.loads(data)
 	folders.insert(0, {"folder_id": "unread", "title": "unread"})
 	for f in folders:
+		print >>sys.stderr, f["title"]
 		folder_el = newdoc.createElement("folder")
 		folder_el.setAttribute("id", str(f["folder_id"]))
 		folder_el.setAttribute("title", f["title"])
