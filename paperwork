@@ -73,6 +73,9 @@ where <action> can be:
 %(green)swipefolder%(nocolour)s <folder name>
     delete articles in the specified folder, and delete the folder
 
+%(green)smergeinto%(nocolour)s <source folder> <destination folder>
+    move articles from source folder into destination folder
+
 %(green)sauth/authenticate%(nocolour)s -u <username>
     authenticate as the specified user
 
@@ -421,5 +424,52 @@ if command == "wipefolder":
 		(response, data) = client.request(API_URL_PREFIX + DELETE_FOLDER, "POST", urllib.urlencode({
 			"folder_id": folder_id
 			}))
+	
+	print "done"
+
+################################################################################
+
+if command == "mergeinto":
+
+	(source_folder, dest_folder) = args[1:3]
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	
+	# check source folder exists
+	if source_folder not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, source_folder)
+		sys.exit(1)
+	
+	# check destination folder exists
+	if dest_folder not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, dest_folder)
+		sys.exit(1)
+	
+	source_folder_id = folders[source_folder]
+	dest_folder_id = folders[dest_folder]
+	print "Moving from \"%s\" (id=%d) to \"%s\" (id=%d)" % (source_folder, source_folder_id, dest_folder, dest_folder_id)
+	
+	# get bookmarks in source folder
+	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+		"limit": 500,
+		"folder_id": source_folder_id
+		}))
+	bookmarks = json.loads(data)
+	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+	bookmark_time_and_id = lambda b: (b["time"], b["bookmark_id"])
+	bookmarks.sort(key=bookmark_time_and_id)
+	
+	for (i, b) in enumerate(bookmarks):
+		if not options.quiet:
+			print "moving (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+		if not options.dry_run:
+			(response, data) = client.request(API_URL_PREFIX + MOVE_BOOKMARK, "POST", urllib.urlencode({
+				"bookmark_id": b["bookmark_id"],
+				"folder_id": dest_folder_id
+				}))
+			time.sleep(1)
 	
 	print "done"
