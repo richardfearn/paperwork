@@ -238,17 +238,21 @@ if command == "articles":
 ################################################################################
 
 if command == "count":
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders.insert(0, {"folder_id": "unread", "title": "unread"})
-	for f in folders:
-		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-			"limit": 500,
-			"folder_id": f["folder_id"]
-			}))
-		bookmarks = json.loads(data)
-		bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
-		print "%d\t%s" % (len(bookmarks), f["title"])
+	try:
+		(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+		folders = json.loads(data)
+		folders.insert(0, {"folder_id": "unread", "title": "unread"})
+		for f in folders:
+			(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+				"limit": 500,
+				"folder_id": f["folder_id"]
+				}))
+			bookmarks = json.loads(data)
+			bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
+			print "%d\t%s" % (len(bookmarks), f["title"])
+			sys.stdout.flush()
+	except KeyboardInterrupt:
+		pass
 
 ################################################################################
 
