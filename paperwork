@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BATCH_SIZE = 20
+BATCH_SIZE = 10
 
 API_URL_PREFIX = "https://www.instapaper.com/api/1"
 
@@ -286,36 +286,48 @@ if command == "export":
 
 ################################################################################
 
-if command == "batch":
+if command == "split":
 	
-	# get bookmarks in "Unread" folder
+	foldername  = args[1]
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	
+	# check specified folder exists
+	if foldername not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+		sys.exit(1)
+	
+	folder_id = folders[foldername]
+	
+	# get bookmarks in source folder
 	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
 		"limit": 500,
-		"folder_id": "unread"
+		"folder_id": folder_id
 		}))
 	bookmarks = json.loads(data)
 	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
 	
 	# exit if there are no bookmarks to batch
 	if len(bookmarks) == 0:
-		print >>sys.stderr, "%s: no bookmarks to batch" % PROGRAM_NAME
+		print >>sys.stderr, "%s: no bookmarks to split" % PROGRAM_NAME
 		sys.exit(1)
 	
 	if not options.quiet:
-		print "%d bookmark(s) in 'Read Later' folder" % len(bookmarks)
+		print "%d bookmark(s) in '%s' folder" % (len(bookmarks), foldername)
 	
 	# get list of current folder names
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	folder_names = [f["title"] for f in folders]
 	
-	# determine name for new folder, based on today's date
-	now = datetime.datetime.now()
-	ymd = now.strftime("%Y-%m-%d")
+	# determine name for new folder, based on name of source folder
 	letter = "a"
-	while (ymd + "-" + letter) in folder_names:
+	while (foldername + "-" + letter) in folder_names:
 		letter = chr(ord(letter) + 1)
-	new_folder_name = ymd + "-" + letter
+	new_folder_name = foldername + "-" + letter
 	
 	# create new folder
 	if not options.quiet:
@@ -329,7 +341,7 @@ if command == "batch":
 		if not options.quiet:
 			print "done (folder_id=%s)" % new_folder_id
 	
-	# move 20 oldest bookmarks into new folder
+	# move oldest bookmarks into new folder
 	bookmarks = list(reversed(bookmarks))
 	bookmarks_to_move = bookmarks[0:BATCH_SIZE]
 	for (i, b) in enumerate(bookmarks_to_move):
@@ -342,7 +354,7 @@ if command == "batch":
 				}))
 	
 	if not options.quiet:
-		print "%d bookmark(s) remaining in 'Read Later' folder" % (len(bookmarks) - len(bookmarks_to_move))
+		print "%d bookmark(s) remaining in '%s' folder" % (len(bookmarks) - len(bookmarks_to_move), foldername)
 		print "done"
 
 ################################################################################
