@@ -270,10 +270,22 @@ if command == "export":
 	newdoc = impl.createDocument(None, "bookmarks", None)
 	top_element = newdoc.documentElement
 	
+	specified_folders = args[1:]
+
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	folders.insert(0, {"folder_id": "unread", "title": "unread"})
+
+	folders_by_name = {}
 	for f in folders:
+		folders_by_name[f["title"]] = f
+
+	if not specified_folders:
+		folders_to_export = folders
+	else:
+		folders_to_export = [folders_by_name[x] for x in specified_folders]
+
+	for f in folders_to_export:
 		print >>sys.stderr, f["title"]
 		folder_el = newdoc.createElement("folder")
 		folder_el.setAttribute("id", str(f["folder_id"]))
