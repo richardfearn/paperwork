@@ -40,6 +40,7 @@ import optparse
 import ConfigParser
 import os
 import getpass
+import fnmatch
 
 CONFIG_FILE = os.path.expanduser("~/.paperworkrc")
 
@@ -237,6 +238,22 @@ if command == "articles":
 
 ################################################################################
 
+def matching_folders(folders, patterns):
+	
+	folders_by_name = dict([f["title"], f] for f in folders)
+	folder_names = [f["title"] for f in folders]
+	
+	matching_folder_names = []
+	for p in patterns:
+		matches = fnmatch.filter(folder_names, p)
+		matching_folder_names.extend(matches)
+	
+	matching_folders = [folders_by_name[f] for f in matching_folder_names]
+	
+	return matching_folders
+
+################################################################################
+
 if command == "count":
 	try:
 		(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
@@ -244,12 +261,7 @@ if command == "count":
 		folders.insert(0, {"folder_id": "unread", "title": "unread"})
 		specified_folders = args[1:]
 		if specified_folders:
-			folders_by_name = {}
-			for f in folders:
-				folders_by_name[f["title"]] = f
-			folders = []
-			for f in specified_folders:
-				folders.append(folders_by_name[f])
+			folders = matching_folders(folders, specified_folders)
 		for f in folders:
 			(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
 				"limit": 500,
@@ -276,14 +288,10 @@ if command == "export":
 	folders = json.loads(data)
 	folders.insert(0, {"folder_id": "unread", "title": "unread"})
 
-	folders_by_name = {}
-	for f in folders:
-		folders_by_name[f["title"]] = f
-
 	if not specified_folders:
 		folders_to_export = folders
 	else:
-		folders_to_export = [folders_by_name[x] for x in specified_folders]
+		folders_to_export = matching_folders(folders, specified_folders)
 
 	for f in folders_to_export:
 		print >>sys.stderr, f["title"]
