@@ -23,6 +23,7 @@ API_URL_PREFIX = "https://www.instapaper.com/api/1"
 LIST_FOLDERS = "/folders/list"
 ADD_FOLDER   = "/folders/add"
 DELETE_FOLDER = "/folders/delete"
+SET_FOLDER_ORDER = "/folders/set_order"
 LIST_BOOKMARKS = "/bookmarks/list"
 DELETE_BOOKMARK = "/bookmarks/delete"
 MOVE_BOOKMARK  = "/bookmarks/move"
@@ -73,6 +74,9 @@ where <action> can be:
 
 %(green)swipefolder%(nocolour)s <folder name>
     delete articles in the specified folder, and delete the folder
+
+%(green)sfoldertotop%(nocolour)s <folder name>
+    move a folder to the top of the folder list
 
 %(green)sauth/authenticate%(nocolour)s -u <username>
     authenticate as the specified user
@@ -468,3 +472,34 @@ if command == "wipefolder":
 			}))
 	
 	print "done"
+
+################################################################################
+
+if command == "foldertotop":
+	
+	foldername = args[1]
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	
+	# determine new position for each folder
+	order = []
+	folder_pos = 1
+	for f in folders:
+		folder_name = f["folder_id"]
+		position = f["position"]
+		if f["title"] == foldername:
+			position = 1
+		else:
+			folder_pos += 1
+			position = folder_pos
+		order.append((folder_name, position))
+	order = ["%d:%d" % p for p in order]
+	order = ",".join(order)
+	
+	# send the reorder request
+	if not options.dry_run:
+		(response, data) = client.request(API_URL_PREFIX + SET_FOLDER_ORDER, "POST", urllib.urlencode({
+			"order": order
+			}))
