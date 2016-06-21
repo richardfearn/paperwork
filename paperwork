@@ -245,6 +245,11 @@ def matching_folders(folders, patterns):
 	
 	matching_folder_names = []
 	for p in patterns:
+		# Solved problem with folder names containing stars
+		# Command-line parameer was str containing "\xe2\x98\x85"
+		# Folder received from API was unicode containing "\u2605"
+		# See https://chars.suikawiki.org/char/2605
+		p = p.decode("utf-8")
 		matches = fnmatch.filter(folder_names, p)
 		matching_folder_names.extend(matches)
 	
@@ -262,6 +267,10 @@ if command == "count":
 		specified_folders = args[1:]
 		if specified_folders:
 			folders = matching_folders(folders, specified_folders)
+			show_total = False
+		else:
+			show_total = True
+		total = 0
 		for f in folders:
 			(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
 				"limit": 500,
@@ -269,8 +278,12 @@ if command == "count":
 				}))
 			bookmarks = json.loads(data)
 			bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
-			print "%d\t%s" % (len(bookmarks), f["title"])
+			print ("%d\t%s" % (len(bookmarks), f["title"])).encode("utf-8")
+			total += len(bookmarks)
 			sys.stdout.flush()
+		if show_total:
+			print "-" * 30
+			print "%d\tTOTAL" % total
 	except KeyboardInterrupt:
 		pass
 
@@ -294,7 +307,7 @@ if command == "export":
 		folders_to_export = matching_folders(folders, specified_folders)
 
 	for f in folders_to_export:
-		print >>sys.stderr, f["title"]
+		print >>sys.stderr, f["title"].encode("utf-8")
 		folder_el = newdoc.createElement("folder")
 		folder_el.setAttribute("id", str(f["folder_id"]))
 		folder_el.setAttribute("title", f["title"])
