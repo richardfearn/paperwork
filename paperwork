@@ -222,7 +222,7 @@ if command == "folders":
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	for f in folders:
-		print f["title"]
+		print f["title"].encode("utf-8")
 
 ################################################################################
 
