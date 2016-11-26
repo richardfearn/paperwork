@@ -503,3 +503,13 @@ if command == "foldertotop":
 		(response, data) = client.request(API_URL_PREFIX + SET_FOLDER_ORDER, "POST", urllib.urlencode({
 			"order": order
 			}))
+
+################################################################################
+
+if command == "mkdir":
+	
+	folder_name = args[1]
+	
+	(response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
+		"title": folder_name,
+		}))
