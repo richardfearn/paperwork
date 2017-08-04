@@ -483,6 +483,12 @@ if command == "foldertotop":
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	
+	# check specified folder exists
+	folder_names = [f["title"] for f in folders]
+	if foldername not in folder_names:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+		sys.exit(1)
+	
 	# determine new position for each folder
 	order = []
 	folder_pos = 1
