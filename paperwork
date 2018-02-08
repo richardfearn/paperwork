@@ -303,6 +303,7 @@ if command == "export":
 
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
+	folders.insert(0, {"folder_id": "archive", "title": "archive"})
 	folders.insert(0, {"folder_id": "unread", "title": "unread"})
 
 	if not specified_folders:
