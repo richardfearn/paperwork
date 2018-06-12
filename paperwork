@@ -405,6 +405,7 @@ if command == "emptyfolder":
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	folders["unread"] = "unread"
 	
 	# check specified folder exists
 	if foldername not in folders:
