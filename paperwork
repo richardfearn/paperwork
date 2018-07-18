@@ -376,16 +376,21 @@ if command == "batch":
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
 	folders = json.loads(data)
 	folder_names = [f["title"] for f in folders]
+
+	if len(args) == 2:
+		new_folder_prefix = foldername
+	else:
+		now = datetime.datetime.now()
+		new_folder_prefix = now.strftime("%Y-%m-%d")
 	
-	# determine name for new folder, based on today's date
-	now = datetime.datetime.now()
-	ymd = now.strftime("%Y-%m-%d")
+	# determine name for new folder
 	letter = "a"
-	while (ymd + "-" + letter) in folder_names:
+	while (new_folder_prefix + "-" + letter) in folder_names:
 		letter = chr(ord(letter) + 1)
-	new_folder_name = ymd + "-" + letter
+	new_folder_name = new_folder_prefix + "-" + letter
 	
 	# create new folder
+        
 	if not options.quiet:
 		print "adding new folder '%s'" % new_folder_name
 	if not options.dry_run:
