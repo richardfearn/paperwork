@@ -338,10 +338,28 @@ if command == "export":
 
 if command == "batch":
 	
-	# get bookmarks in "Unread" folder
+	if len(args) == 2:
+		foldername = args[1]
+	else:
+		foldername = "unread"
+	
+	# get folders
+	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+	folders = json.loads(data)
+	folders = dict([(f["title"], f["folder_id"]) for f in folders])
+	folders["unread"] = "unread"
+	
+	# check specified folder exists
+	if foldername not in folders:
+		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+		sys.exit(1)
+	
+	folder_id = folders[foldername]
+	
+	# get bookmarks in folder
 	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
 		"limit": 500,
-		"folder_id": "unread"
+		"folder_id": folder_id
 		}))
 	bookmarks = json.loads(data)
 	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
@@ -352,7 +370,7 @@ if command == "batch":
 		sys.exit(1)
 	
 	if not options.quiet:
-		print "%d bookmark(s) in 'Read Later' folder" % len(bookmarks)
+		print "%d bookmark(s) in '%s' folder" % (len(bookmarks), foldername)
 	
 	# get list of current folder names
 	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
@@ -392,7 +410,7 @@ if command == "batch":
 				}))
 	
 	if not options.quiet:
-		print "%d bookmark(s) remaining in 'Read Later' folder" % (len(bookmarks) - len(bookmarks_to_move))
+		print "%d bookmark(s) remaining in '%s' folder" % (len(bookmarks) - len(bookmarks_to_move), foldername)
 		print "done"
 
 ################################################################################
