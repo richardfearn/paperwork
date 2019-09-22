@@ -6,7 +6,7 @@ class TestObjects:
     def test_create_bookmark(self):
 
         bookmark = Bookmark(
-            id="ID",
+            bookmark_id="ID",
             description="DESCRIPTION",
             time="TIME",
             title="TITLE",
@@ -40,7 +40,7 @@ class TestObjects:
     def test_create_folder(self):
 
         folder = Folder(
-            id="ID",
+            folder_id="ID",
             title="TITLE",
             slug="SLUG",
         )

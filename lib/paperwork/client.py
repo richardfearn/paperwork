@@ -21,8 +21,8 @@ OAUTH_ACCESS_TOKEN = "/oauth/access_token"
 
 FORMAT = "%(asctime)-15s %(levelname)-8s %(name)s - %(message)s"
 logging.basicConfig(format=FORMAT)
-logger = logging.getLogger("paperwork")
-logger.setLevel(logging.INFO)
+LOGGER = logging.getLogger("paperwork")
+LOGGER.setLevel(logging.INFO)
 
 
 class Client:
@@ -113,8 +113,8 @@ class Client:
     def do_request(self, url, params=None):
 
         full_url = API_URL_PREFIX + url
-        logger.debug("Request URL: %s", full_url)
-        logger.debug("Request parameters: %s", params)
+        LOGGER.debug("Request URL: %s", full_url)
+        LOGGER.debug("Request parameters: %s", params)
 
         data = None
         successful = False
@@ -122,13 +122,18 @@ class Client:
         for attempt in range(1, self.max_retries+1):
 
             try:
-                logger.debug("Attempt %d", attempt)
-                logger.debug("Making request")
+                LOGGER.debug("Attempt %d", attempt)
+                LOGGER.debug("Making request")
 
-                response = requests.post(url=full_url, data=params, auth=self.oauth, timeout=self.request_timeout)
+                response = requests.post(
+                    url=full_url,
+                    data=params,
+                    auth=self.oauth,
+                    timeout=self.request_timeout,
+                )
 
-                logger.debug("Response: %s", response)
-                logger.debug("Response status: %d" % response.status_code)
+                LOGGER.debug("Response: %s", response)
+                LOGGER.debug("Response status: %d", response.status_code)
 
                 data = response.text
                 # print(data)
@@ -138,15 +143,15 @@ class Client:
                     successful = True
 
                 else:
-                    logger.warning(ATTEMPT_FAILED_MARKER)
+                    LOGGER.warning(ATTEMPT_FAILED_MARKER)
 
             except requests.exceptions.RequestException:
-                logger.warning(ATTEMPT_FAILED_MARKER, exc_info=True)
+                LOGGER.warning(ATTEMPT_FAILED_MARKER, exc_info=True)
 
             if successful:
                 break
 
-        logger.debug("Final result: %s", successful)
+        LOGGER.debug("Final result: %s", successful)
 
         if not successful:
             raise Exception("Failed after %d attempts" % self.max_retries)
