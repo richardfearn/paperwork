@@ -41,7 +41,7 @@ class Client:
 
     def list_folders(self):
 
-        data = self.do_request(LIST_FOLDERS)
+        data = self._do_request(LIST_FOLDERS)
 
         data = [o for o in data if o["type"] == "folder"]
         data = list(map(Folder.from_json, data))
@@ -49,7 +49,7 @@ class Client:
 
     def list_bookmarks(self, folder, limit=500):
 
-        data = self.do_request(LIST_BOOKMARKS, {
+        data = self._do_request(LIST_BOOKMARKS, {
             "folder_id": folder.id,
             "limit": limit,
         })
@@ -60,7 +60,7 @@ class Client:
 
     def move_bookmark(self, bookmark, folder):
 
-        data = self.do_request(MOVE_BOOKMARK, {
+        data = self._do_request(MOVE_BOOKMARK, {
             "bookmark_id": bookmark.id,
             "folder_id": folder.id,
         })
@@ -70,13 +70,13 @@ class Client:
         return data
 
     def delete_folder(self, folder):
-        return self.do_request(DELETE_FOLDER, {
+        return self._do_request(DELETE_FOLDER, {
             "folder_id": folder.id,
         })
 
     def add_folder(self, folder):
 
-        data = self.do_request(ADD_FOLDER, {
+        data = self._do_request(ADD_FOLDER, {
             "title": folder.title,
         })
 
@@ -99,18 +99,18 @@ class Client:
         if folder is not None:
             params["folder_id"] = folder.id
 
-        data = self.do_request(ADD_BOOKMARK, params)
+        data = self._do_request(ADD_BOOKMARK, params)
 
         data = data[0]
         data = Bookmark.from_json(data)
         return data
 
     def delete_bookmark(self, bookmark):
-        return self.do_request(DELETE_BOOKMARK, {
+        return self._do_request(DELETE_BOOKMARK, {
             "bookmark_id": bookmark.id,
         })
 
-    def do_request(self, url, params=None):
+    def _do_request(self, url, params=None):
 
         full_url = API_URL_PREFIX + url
         LOGGER.debug("Request URL: %s", full_url)
