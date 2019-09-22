@@ -40,16 +40,20 @@ class Client:
         self.max_retries = 10
 
     def list_folders(self):
+
         data = self.do_request(LIST_FOLDERS)
+
         data = [o for o in data if o["type"] == "folder"]
         data = list(map(Folder.from_json, data))
         return data
 
     def list_bookmarks(self, folder, limit=500):
+
         data = self.do_request(LIST_BOOKMARKS, {
             "folder_id": folder.id,
             "limit": limit,
         })
+
         data = [o for o in data if o["type"] == "bookmark"]
         data = list(map(Bookmark.from_json, data))
         return data
@@ -60,6 +64,7 @@ class Client:
             "bookmark_id": bookmark.id,
             "folder_id": folder.id,
         })
+
         data = data[0]
         data = Bookmark.from_json(data)
         return data
@@ -70,24 +75,32 @@ class Client:
         })
 
     def add_folder(self, folder):
+
         data = self.do_request(ADD_FOLDER, {
             "title": folder.title,
         })
+
         data = data[0]
         data = Folder.from_json(data)
         return data
 
     def add_bookmark(self, bookmark, folder=None):
+
         params = {
             "url": bookmark.url,
         }
+
         if bookmark.title is not None:
             params["title"] = bookmark.title
+
         if bookmark.description is not None:
             params["description"] = bookmark.description
+
         if folder is not None:
             params["folder_id"] = folder.id
+
         data = self.do_request(ADD_BOOKMARK, params)
+
         data = data[0]
         data = Bookmark.from_json(data)
         return data
@@ -98,33 +111,46 @@ class Client:
         })
 
     def do_request(self, url, params=None):
+
         full_url = API_URL_PREFIX + url
         logger.debug("Request URL: %s", full_url)
         logger.debug("Request parameters: %s", params)
+
         data = None
         successful = False
+
         for attempt in range(1, self.max_retries+1):
+
             try:
                 logger.debug("Attempt %d", attempt)
                 logger.debug("Making request")
 
                 response = requests.post(url=full_url, data=params, auth=self.oauth, timeout=self.request_timeout)
+
                 logger.debug("Response: %s", response)
                 logger.debug("Response status: %d" % response.status_code)
+
                 data = response.text
                 # print(data)
+
                 if response.status_code == 200:
                     data = json.loads(data)
                     successful = True
+
                 else:
                     logger.warning(ATTEMPT_FAILED_MARKER)
+
             except requests.exceptions.RequestException:
                 logger.warning(ATTEMPT_FAILED_MARKER, exc_info=True)
+
             if successful:
                 break
+
         logger.debug("Final result: %s", successful)
+
         if not successful:
             raise Exception("Failed after %d attempts" % self.max_retries)
+
         return data
 
 
