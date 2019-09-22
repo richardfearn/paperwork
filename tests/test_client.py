@@ -1,43 +1,55 @@
-import paperwork
+"""
+Tests for the paperwork.client module
+"""
+
+# pylint: disable=missing-docstring
+
 import random
 import pytest
+
+import paperwork
 from paperwork import Bookmark, Folder, UNREAD_FOLDER, ARCHIVE_FOLDER
-
-
-config = paperwork.Config()
 
 USERNAME = "richardfearn@gmail.com"
 
 
-class TestClient(object):
+class TestClient:
 
+    """Tests for the Client class"""
+
+    @staticmethod
     @pytest.fixture
-    def client(self):
+    def client():
+        config = paperwork.Config()
         client = paperwork.Client(config, USERNAME)
         return client
 
-    def test_list_folders(self, client):
+    @staticmethod
+    def test_list_folders(client):
 
         folders = client.list_folders()
         print(folders)
         assert folders is not None
 
-    def test_list_bookmarks_in_unread(self, client):
+    @staticmethod
+    def test_list_bookmarks_in_unread(client):
 
         bookmarks = client.list_bookmarks(UNREAD_FOLDER)
         print(bookmarks)
         assert bookmarks is not None
 
-    def test_list_bookmarks_in_archive(self, client):
+    @staticmethod
+    def test_list_bookmarks_in_archive(client):
 
         bookmarks = client.list_bookmarks(ARCHIVE_FOLDER)
         print(bookmarks)
         assert bookmarks is not None
 
-    def test_list_bookmarks_in_user_folder(self, client):
+    @staticmethod
+    def test_list_bookmarks_in_user_folder(client):
 
         # create new folder
-        new_folder_name = self.random_folder_name()
+        new_folder_name = TestClient.random_folder_name()
         folder_to_add = Folder(title=new_folder_name)
         added_folder = client.add_folder(folder_to_add)
         print(added_folder)
@@ -48,10 +60,11 @@ class TestClient(object):
         # delete folder
         client.delete_folder(added_folder)
 
-    def test_delete_folder(self, client):
+    @staticmethod
+    def test_delete_folder(client):
 
         # create new folder
-        new_folder_name = self.random_folder_name()
+        new_folder_name = TestClient.random_folder_name()
         folder_to_add = Folder(title=new_folder_name)
         added_folder = client.add_folder(folder_to_add)
         print(added_folder)
@@ -65,9 +78,10 @@ class TestClient(object):
         folders_after = client.list_folders()
         assert new_folder_name not in [f.title for f in folders_after]
 
-    def test_add_folder(self, client):
+    @staticmethod
+    def test_add_folder(client):
 
-        new_folder_name = self.random_folder_name()
+        new_folder_name = TestClient.random_folder_name()
 
         folders_before = client.list_folders()
         assert new_folder_name not in [f.title for f in folders_before]
@@ -83,18 +97,20 @@ class TestClient(object):
         # delete folder
         client.delete_folder(added_folder)
 
-    def test_add_bookmark_to_unread(self, client):
+    @staticmethod
+    def test_add_bookmark_to_unread(client):
 
-        self._test_add_bookmark_to_folder(client, UNREAD_FOLDER)
+        TestClient._test_add_bookmark_to_folder(client, UNREAD_FOLDER)
 
-    def test_add_bookmark_to_user_folder(self, client):
+    @staticmethod
+    def test_add_bookmark_to_user_folder(client):
 
         # create folder
-        temp_folder_title = self.random_folder_name()
+        temp_folder_title = TestClient.random_folder_name()
         folder_to_add = Folder(title=temp_folder_title)
         temp_folder = client.add_folder(folder_to_add)
 
-        self._test_add_bookmark_to_folder(client, temp_folder)
+        TestClient._test_add_bookmark_to_folder(client, temp_folder)
 
         client.delete_folder(temp_folder)
 
@@ -114,10 +130,11 @@ class TestClient(object):
         bookmarks_after = client.list_bookmarks(folder)
         assert new_bookmark.id in [b.id for b in bookmarks_after]
 
-    def test_delete_bookmark(self, client):
+    @staticmethod
+    def test_delete_bookmark(client):
 
         # create folder
-        temp_folder_title = self.random_folder_name()
+        temp_folder_title = TestClient.random_folder_name()
         folder_to_add = Folder(title=temp_folder_title)
         temp_folder = client.add_folder(folder_to_add)
 
@@ -138,10 +155,11 @@ class TestClient(object):
 
         client.delete_folder(temp_folder)
 
-    def test_move_bookmark_from_unread_to_user_folder(self, client):
+    @staticmethod
+    def test_move_bookmark_from_unread_to_user_folder(client):
 
         # create folder
-        temp_folder_title = self.random_folder_name()
+        temp_folder_title = TestClient.random_folder_name()
         folder_to_add = Folder(title=temp_folder_title)
         temp_folder = client.add_folder(folder_to_add)
 
@@ -157,10 +175,11 @@ class TestClient(object):
 
         client.delete_folder(temp_folder)
 
-    def test_move_bookmark_from_user_folder_to_unread(self, client):
+    @staticmethod
+    def test_move_bookmark_from_user_folder_to_unread(client):
 
         # create folder
-        temp_folder_title = self.random_folder_name()
+        temp_folder_title = TestClient.random_folder_name()
         folder_to_add = Folder(title=temp_folder_title)
         temp_folder = client.add_folder(folder_to_add)
 
