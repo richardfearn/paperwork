@@ -1,3 +1,9 @@
+"""
+paperwork client module
+
+This module includes Client, the main class for making requests to Instapaper.
+"""
+
 # https://www.instapaper.com/api
 # https://2.python-requests.org/en/master/user/quickstart/
 # https://requests-oauthlib.readthedocs.io/en/latest/oauth1_workflow.html
@@ -27,6 +33,8 @@ LOGGER.setLevel(logging.INFO)
 
 class Client:
 
+    """Main class for making requests to Instapaper."""
+
     def __init__(self, config, username):
 
         self.config = config
@@ -41,6 +49,8 @@ class Client:
 
     def list_folders(self):
 
+        """Lists the user's folders."""
+
         data = self._do_request(LIST_FOLDERS)
 
         data = [o for o in data if o["type"] == "folder"]
@@ -48,6 +58,8 @@ class Client:
         return data
 
     def list_bookmarks(self, folder, limit=500):
+
+        """Lists the user's bookmarks."""
 
         data = self._do_request(LIST_BOOKMARKS, {
             "folder_id": folder.id,
@@ -60,6 +72,8 @@ class Client:
 
     def move_bookmark(self, bookmark, folder):
 
+        """Moves the specified bookmark to the specified folder."""
+
         data = self._do_request(MOVE_BOOKMARK, {
             "bookmark_id": bookmark.id,
             "folder_id": folder.id,
@@ -70,11 +84,16 @@ class Client:
         return data
 
     def delete_folder(self, folder):
+
+        """Deletes the specified folder."""
+
         return self._do_request(DELETE_FOLDER, {
             "folder_id": folder.id,
         })
 
     def add_folder(self, folder):
+
+        """Creates a folder."""
 
         data = self._do_request(ADD_FOLDER, {
             "title": folder.title,
@@ -85,6 +104,8 @@ class Client:
         return data
 
     def add_bookmark(self, bookmark, folder=None):
+
+        """Adds a new unread bookmark to the user's account."""
 
         params = {
             "url": bookmark.url,
@@ -106,6 +127,9 @@ class Client:
         return data
 
     def delete_bookmark(self, bookmark):
+
+        """Permanently deletes the specified bookmark."""
+
         return self._do_request(DELETE_BOOKMARK, {
             "bookmark_id": bookmark.id,
         })

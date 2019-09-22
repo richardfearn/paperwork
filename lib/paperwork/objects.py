@@ -1,8 +1,17 @@
+"""
+paperwork objects module
+
+This module includes Bookmark and Folder, the two main Instapaper objects.
+"""
+
+
 def _quote_str(string):
     return '"%s"' % string if string is not None else "None"
 
 
 class Bookmark:
+
+    """Represents an Instapaper bookmark."""
 
     def __init__(self, bookmark_id=None, description=None, time=None, title=None, url=None):  # pylint: disable=too-many-arguments
         self.id = bookmark_id  # pylint: disable=invalid-name
@@ -20,6 +29,9 @@ class Bookmark:
 
     @staticmethod
     def from_json(json):
+
+        """Creates a new Bookmark from the specified JSON object."""
+
         return Bookmark(
             bookmark_id=json["bookmark_id"],
             description=json["description"],
@@ -30,6 +42,8 @@ class Bookmark:
 
 
 class Folder:
+
+    """Represents an Instapaper folder."""
 
     def __init__(self, folder_id=None, title=None, slug=None):
         self.id = folder_id  # pylint: disable=invalid-name
@@ -44,6 +58,9 @@ class Folder:
 
     @staticmethod
     def from_json(json):
+
+        """Creates a new Folder from the specified JSON object."""
+
         return Folder(
             folder_id=json["folder_id"],
             title=json["title"],
