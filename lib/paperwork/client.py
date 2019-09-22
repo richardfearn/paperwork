@@ -118,7 +118,7 @@ class Client:
                     successful = True
                 else:
                     logger.warning(ATTEMPT_FAILED_MARKER)
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.RequestException:
                 logger.warning(ATTEMPT_FAILED_MARKER, exc_info=True)
             if successful:
                 break
