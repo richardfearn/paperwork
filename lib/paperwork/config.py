@@ -21,7 +21,8 @@ class Config:
     def __init__(self, filename=None):
 
         if filename is None:
-            filename = os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG_FILE)
+            home_dir = os.path.expanduser("~")
+            filename = os.path.join(home_dir, DEFAULT_CONFIG_FILE)
 
         self.filename = filename
 

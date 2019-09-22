@@ -13,7 +13,10 @@ class Bookmark:
 
     """Represents an Instapaper bookmark."""
 
-    def __init__(self, bookmark_id=None, description=None, time=None, title=None, url=None):  # pylint: disable=too-many-arguments
+    def __init__(self,  # pylint: disable=too-many-arguments
+                 bookmark_id=None, description=None,
+                 time=None, title=None, url=None):
+
         self.id = bookmark_id  # pylint: disable=invalid-name
         self.description = description
         self.time = time

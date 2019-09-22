@@ -39,10 +39,12 @@ class Client:
 
         self.config = config
 
-        self.oauth = OAuth1(self.config.consumer_key(),
-                            client_secret=self.config.consumer_secret(),
-                            resource_owner_key=self.config.token(username),
-                            resource_owner_secret=self.config.token_secret(username))
+        self.oauth = OAuth1(
+            self.config.consumer_key(),
+            client_secret=self.config.consumer_secret(),
+            resource_owner_key=self.config.token(username),
+            resource_owner_secret=self.config.token_secret(username),
+        )
 
         self.request_timeout = 5
         self.max_retries = 10
