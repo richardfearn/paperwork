@@ -94,16 +94,16 @@ parser.add_option("-u", "--username", help="username")
 (options, args) = parser.parse_args()
 
 if len(args) == 0:
-	print >>sys.stderr, USAGE
-	sys.exit(1)
+    print >>sys.stderr, USAGE
+    sys.exit(1)
 
 command = args[0]
 
 ################################################################################
 
 def save_config(config):
-	with open(CONFIG_FILE, "wb") as configfile:
-		config.write(configfile)
+    with open(CONFIG_FILE, "wb") as configfile:
+        config.write(configfile)
 
 # read config
 config = ConfigParser.RawConfigParser()
@@ -113,20 +113,20 @@ PAPERWORK_SECTION = "paperwork"
 
 # add [paperwork] section, if missing
 if not config.has_section(PAPERWORK_SECTION):
-	config.add_section(PAPERWORK_SECTION)
-	save_config(config)
+    config.add_section(PAPERWORK_SECTION)
+    save_config(config)
 
 key_or_secret_missing = False
 
 if not config.has_option(PAPERWORK_SECTION, "consumer_key"):
-	key_or_secret_missing = True
+    key_or_secret_missing = True
 
 if not config.has_option(PAPERWORK_SECTION, "consumer_secret"):
-	key_or_secret_missing = True
+    key_or_secret_missing = True
 
 if key_or_secret_missing:
-	print >>sys.stderr, "%s: consumer key or secret missing in .paperworkrc file" % PROGRAM_NAME
-	sys.exit(1)
+    print >>sys.stderr, "%s: consumer key or secret missing in .paperworkrc file" % PROGRAM_NAME
+    sys.exit(1)
 
 consumer_key = config.get(PAPERWORK_SECTION, "consumer_key")
 consumer_secret = config.get(PAPERWORK_SECTION, "consumer_secret")
@@ -136,77 +136,77 @@ consumer = oauth2.Consumer(consumer_key, consumer_secret)
 ################################################################################
 
 if command in ("auth", "authenticate"):
-	
-	if not options.username:
-		print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
-		sys.exit(1)
-	
-	if config.has_section(options.username):
-		print >>sys.stderr, "%s: %s already authenticated" % (PROGRAM_NAME, options.username)
-		sys.exit(1)
-	
-	prompt = "enter password for %s: " % options.username
-	password = getpass.getpass(prompt=prompt)
-	
-	auth_client = oauth2.Client(consumer)
-	
-	(response, data) = auth_client.request(API_URL_PREFIX + OAUTH_ACCESS_TOKEN, "POST", urllib.urlencode({
-		"x_auth_mode": "client_auth",
-		"x_auth_username": options.username,
-		"x_auth_password": password
-		}))
-	
-	if response["status"] in ("400", "401"):
-		print >>sys.stderr, "%s: incorrect password" % PROGRAM_NAME
-		sys.exit(1)
-	
-	elif response["status"] != "200":
-		print >>sys.stderr, "%s: invalid response (%s)" % (PROGRAM_NAME, response["status"])
-		sys.exit(1)
-	
-	if not options.quiet:
-		print "%s successfully authenticated" % options.username
-	
-	token = dict(urlparse.parse_qsl(data))
-	(token, token_secret) = (token["oauth_token"], token["oauth_token_secret"])
-	
-	# add token/secret to config
-	config.add_section(options.username)
-	config.set(options.username, "token", token)
-	config.set(options.username, "token_secret", token_secret)
-	save_config(config)
-	
-	sys.exit(0)
+    
+    if not options.username:
+        print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
+        sys.exit(1)
+    
+    if config.has_section(options.username):
+        print >>sys.stderr, "%s: %s already authenticated" % (PROGRAM_NAME, options.username)
+        sys.exit(1)
+    
+    prompt = "enter password for %s: " % options.username
+    password = getpass.getpass(prompt=prompt)
+    
+    auth_client = oauth2.Client(consumer)
+    
+    (response, data) = auth_client.request(API_URL_PREFIX + OAUTH_ACCESS_TOKEN, "POST", urllib.urlencode({
+        "x_auth_mode": "client_auth",
+        "x_auth_username": options.username,
+        "x_auth_password": password
+        }))
+    
+    if response["status"] in ("400", "401"):
+        print >>sys.stderr, "%s: incorrect password" % PROGRAM_NAME
+        sys.exit(1)
+    
+    elif response["status"] != "200":
+        print >>sys.stderr, "%s: invalid response (%s)" % (PROGRAM_NAME, response["status"])
+        sys.exit(1)
+    
+    if not options.quiet:
+        print "%s successfully authenticated" % options.username
+    
+    token = dict(urlparse.parse_qsl(data))
+    (token, token_secret) = (token["oauth_token"], token["oauth_token_secret"])
+    
+    # add token/secret to config
+    config.add_section(options.username)
+    config.set(options.username, "token", token)
+    config.set(options.username, "token_secret", token_secret)
+    save_config(config)
+    
+    sys.exit(0)
 
 ################################################################################
 
 # all the following commands require an account, so complain if there aren't any
 accounts = [n for n in config.sections() if n != PAPERWORK_SECTION]
 if not accounts:
-	print >>sys.stderr, "%s: no accounts" % PROGRAM_NAME
-	sys.exit(1)
+    print >>sys.stderr, "%s: no accounts" % PROGRAM_NAME
+    sys.exit(1)
 
 # find a default username, if no username was specified
 if not options.username:
-	options.username = accounts[0]
+    options.username = accounts[0]
 
 ################################################################################
 
 if command in ("unauth", "unauthenticate"):
-	
-	if not options.username:
-		print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
-		sys.exit(1)
-	
-	if not config.has_section(options.username):
-		print >>sys.stderr, "%s: unknown username %s" % (PROGRAM_NAME, options.username)
-		sys.exit(1)
-	
-	# remove token/secret from config
-	config.remove_section(options.username)
-	save_config(config)
-	
-	sys.exit(0)
+    
+    if not options.username:
+        print >>sys.stderr, "%s: no username provided" % PROGRAM_NAME
+        sys.exit(1)
+    
+    if not config.has_section(options.username):
+        print >>sys.stderr, "%s: unknown username %s" % (PROGRAM_NAME, options.username)
+        sys.exit(1)
+    
+    # remove token/secret from config
+    config.remove_section(options.username)
+    save_config(config)
+    
+    sys.exit(0)
 
 ################################################################################
 
@@ -219,328 +219,328 @@ client = oauth2.Client(consumer, token)
 ################################################################################
 
 if command == "folders":
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	for f in folders:
-		print f["title"].encode("utf-8")
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    for f in folders:
+        print f["title"].encode("utf-8")
 
 ################################################################################
 
 if command == "articles":
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders.insert(0, {"folder_id": "unread"})
-	for f in folders:
-		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-			"limit": 500,
-			"folder_id": f["folder_id"]
-			}))
-		bookmarks = json.loads(data)
-		for b in bookmarks:
-			if b["type"] == "bookmark":
-				print b["url"]
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folders.insert(0, {"folder_id": "unread"})
+    for f in folders:
+        (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+            "limit": 500,
+            "folder_id": f["folder_id"]
+            }))
+        bookmarks = json.loads(data)
+        for b in bookmarks:
+            if b["type"] == "bookmark":
+                print b["url"]
 
 ################################################################################
 
 def matching_folders(folders, patterns):
-	
-	folders_by_name = dict([f["title"], f] for f in folders)
-	folder_names = [f["title"] for f in folders]
-	
-	matching_folder_names = []
-	for p in patterns:
-		# Solved problem with folder names containing stars
-		# Command-line parameer was str containing "\xe2\x98\x85"
-		# Folder received from API was unicode containing "\u2605"
-		# See https://chars.suikawiki.org/char/2605
-		p = p.decode("utf-8")
-		matches = fnmatch.filter(folder_names, p)
-		matching_folder_names.extend(matches)
-	
-	matching_folders = [folders_by_name[f] for f in matching_folder_names]
-	
-	return matching_folders
+    
+    folders_by_name = dict([f["title"], f] for f in folders)
+    folder_names = [f["title"] for f in folders]
+    
+    matching_folder_names = []
+    for p in patterns:
+        # Solved problem with folder names containing stars
+        # Command-line parameer was str containing "\xe2\x98\x85"
+        # Folder received from API was unicode containing "\u2605"
+        # See https://chars.suikawiki.org/char/2605
+        p = p.decode("utf-8")
+        matches = fnmatch.filter(folder_names, p)
+        matching_folder_names.extend(matches)
+    
+    matching_folders = [folders_by_name[f] for f in matching_folder_names]
+    
+    return matching_folders
 
 ################################################################################
 
 if command == "count":
-	try:
-		(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-		folders = json.loads(data)
-		folders.insert(0, {"folder_id": "unread", "title": "unread"})
-		specified_folders = args[1:]
-		if specified_folders:
-			folders = matching_folders(folders, specified_folders)
-			show_total = False
-		else:
-			show_total = True
-		total = 0
-		for f in folders:
-			(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-				"limit": 500,
-				"folder_id": f["folder_id"]
-				}))
-			bookmarks = json.loads(data)
-			bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
-			print ("%d\t%s" % (len(bookmarks), f["title"])).encode("utf-8")
-			total += len(bookmarks)
-			sys.stdout.flush()
-		if show_total:
-			print "-" * 30
-			print "%d\tTOTAL" % total
-	except KeyboardInterrupt:
-		pass
+    try:
+        (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+        folders = json.loads(data)
+        folders.insert(0, {"folder_id": "unread", "title": "unread"})
+        specified_folders = args[1:]
+        if specified_folders:
+            folders = matching_folders(folders, specified_folders)
+            show_total = False
+        else:
+            show_total = True
+        total = 0
+        for f in folders:
+            (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+                "limit": 500,
+                "folder_id": f["folder_id"]
+                }))
+            bookmarks = json.loads(data)
+            bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
+            print ("%d\t%s" % (len(bookmarks), f["title"])).encode("utf-8")
+            total += len(bookmarks)
+            sys.stdout.flush()
+        if show_total:
+            print "-" * 30
+            print "%d\tTOTAL" % total
+    except KeyboardInterrupt:
+        pass
 
 ################################################################################
 
 if command == "export":
-	from xml.dom.minidom import getDOMImplementation
-	impl = getDOMImplementation()
-	newdoc = impl.createDocument(None, "bookmarks", None)
-	top_element = newdoc.documentElement
-	
-	specified_folders = args[1:]
+    from xml.dom.minidom import getDOMImplementation
+    impl = getDOMImplementation()
+    newdoc = impl.createDocument(None, "bookmarks", None)
+    top_element = newdoc.documentElement
+    
+    specified_folders = args[1:]
 
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders.insert(0, {"folder_id": "archive", "title": "archive"})
-	folders.insert(0, {"folder_id": "unread", "title": "unread"})
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folders.insert(0, {"folder_id": "archive", "title": "archive"})
+    folders.insert(0, {"folder_id": "unread", "title": "unread"})
 
-	if not specified_folders:
-		folders_to_export = folders
-	else:
-		folders_to_export = matching_folders(folders, specified_folders)
+    if not specified_folders:
+        folders_to_export = folders
+    else:
+        folders_to_export = matching_folders(folders, specified_folders)
 
-	for f in folders_to_export:
-		print >>sys.stderr, f["title"].encode("utf-8")
-		folder_el = newdoc.createElement("folder")
-		folder_el.setAttribute("id", str(f["folder_id"]))
-		folder_el.setAttribute("title", f["title"])
-		top_element.appendChild(folder_el)
-		(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-			"limit": 500,
-			"folder_id": f["folder_id"]
-			}))
-		bookmarks = json.loads(data)
-		bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
-		bookmark_time_and_id = lambda b: (b["time"], b["bookmark_id"])
-		bookmarks.sort(key=bookmark_time_and_id, reverse=True)
-		for b in bookmarks:
-			bookmark_el = newdoc.createElement("bookmark")
-			bookmark_el.setAttribute("id", str(b["bookmark_id"]))
-			bookmark_el.setAttribute("time", str(b["time"]))
-			bookmark_el.setAttribute("url", b["url"])
-			bookmark_el.setAttribute("title", b["title"])
-			folder_el.appendChild(bookmark_el)
-	print newdoc.toprettyxml().encode("utf-8")
+    for f in folders_to_export:
+        print >>sys.stderr, f["title"].encode("utf-8")
+        folder_el = newdoc.createElement("folder")
+        folder_el.setAttribute("id", str(f["folder_id"]))
+        folder_el.setAttribute("title", f["title"])
+        top_element.appendChild(folder_el)
+        (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+            "limit": 500,
+            "folder_id": f["folder_id"]
+            }))
+        bookmarks = json.loads(data)
+        bookmarks = [b for b in bookmarks if b["type"] == "bookmark"]
+        bookmark_time_and_id = lambda b: (b["time"], b["bookmark_id"])
+        bookmarks.sort(key=bookmark_time_and_id, reverse=True)
+        for b in bookmarks:
+            bookmark_el = newdoc.createElement("bookmark")
+            bookmark_el.setAttribute("id", str(b["bookmark_id"]))
+            bookmark_el.setAttribute("time", str(b["time"]))
+            bookmark_el.setAttribute("url", b["url"])
+            bookmark_el.setAttribute("title", b["title"])
+            folder_el.appendChild(bookmark_el)
+    print newdoc.toprettyxml().encode("utf-8")
 
 ################################################################################
 
 if command == "batch":
-	
-	if len(args) == 2:
-		foldername = args[1]
-	else:
-		foldername = "unread"
-	
-	# get folders
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders = dict([(f["title"], f["folder_id"]) for f in folders])
-	folders["unread"] = "unread"
-	
-	# check specified folder exists
-	if foldername not in folders:
-		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
-		sys.exit(1)
-	
-	folder_id = folders[foldername]
-	
-	# get bookmarks in folder
-	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-		"limit": 500,
-		"folder_id": folder_id
-		}))
-	bookmarks = json.loads(data)
-	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
-	
-	# exit if there are no bookmarks to batch
-	if len(bookmarks) == 0:
-		print >>sys.stderr, "%s: no bookmarks to batch" % PROGRAM_NAME
-		sys.exit(1)
-	
-	if not options.quiet:
-		print "%d bookmark(s) in '%s' folder" % (len(bookmarks), foldername)
-	
-	# get list of current folder names
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folder_names = [f["title"] for f in folders]
+    
+    if len(args) == 2:
+        foldername = args[1]
+    else:
+        foldername = "unread"
+    
+    # get folders
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folders = dict([(f["title"], f["folder_id"]) for f in folders])
+    folders["unread"] = "unread"
+    
+    # check specified folder exists
+    if foldername not in folders:
+        print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+        sys.exit(1)
+    
+    folder_id = folders[foldername]
+    
+    # get bookmarks in folder
+    (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+        "limit": 500,
+        "folder_id": folder_id
+        }))
+    bookmarks = json.loads(data)
+    bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+    
+    # exit if there are no bookmarks to batch
+    if len(bookmarks) == 0:
+        print >>sys.stderr, "%s: no bookmarks to batch" % PROGRAM_NAME
+        sys.exit(1)
+    
+    if not options.quiet:
+        print "%d bookmark(s) in '%s' folder" % (len(bookmarks), foldername)
+    
+    # get list of current folder names
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folder_names = [f["title"] for f in folders]
 
-	if len(args) == 2:
-		new_folder_prefix = foldername
-	else:
-		now = datetime.datetime.now()
-		new_folder_prefix = now.strftime("%Y-%m-%d")
-	
-	# determine name for new folder
-	letter = "a"
-	while (new_folder_prefix + "-" + letter) in folder_names:
-		letter = chr(ord(letter) + 1)
-	new_folder_name = new_folder_prefix + "-" + letter
-	
-	# create new folder
+    if len(args) == 2:
+        new_folder_prefix = foldername
+    else:
+        now = datetime.datetime.now()
+        new_folder_prefix = now.strftime("%Y-%m-%d")
+    
+    # determine name for new folder
+    letter = "a"
+    while (new_folder_prefix + "-" + letter) in folder_names:
+        letter = chr(ord(letter) + 1)
+    new_folder_name = new_folder_prefix + "-" + letter
+    
+    # create new folder
         
-	if not options.quiet:
-		print "adding new folder '%s'" % new_folder_name
-	if not options.dry_run:
-		(response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
-			"title": new_folder_name
-			}))
-		data = json.loads(data)
-		new_folder_id = data[0]["folder_id"]
-		if not options.quiet:
-			print "done (folder_id=%s)" % new_folder_id
-	
-	# move 20 oldest bookmarks into new folder
-	bookmarks = list(reversed(bookmarks))
-	bookmarks_to_move = bookmarks[0:BATCH_SIZE]
-	for (i, b) in enumerate(bookmarks_to_move):
-		if not options.quiet:
-			print "moving (%d of %d): %s" % (i+1, len(bookmarks_to_move), b["title"].encode("utf-8"))
-		if not options.dry_run:
-			(response, data) = client.request(API_URL_PREFIX + MOVE_BOOKMARK, "POST", urllib.urlencode({
-				"bookmark_id": b["bookmark_id"],
-				"folder_id": new_folder_id
-				}))
-	
-	if not options.quiet:
-		print "%d bookmark(s) remaining in '%s' folder" % (len(bookmarks) - len(bookmarks_to_move), foldername)
-		print "done"
+    if not options.quiet:
+        print "adding new folder '%s'" % new_folder_name
+    if not options.dry_run:
+        (response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
+            "title": new_folder_name
+            }))
+        data = json.loads(data)
+        new_folder_id = data[0]["folder_id"]
+        if not options.quiet:
+            print "done (folder_id=%s)" % new_folder_id
+    
+    # move 20 oldest bookmarks into new folder
+    bookmarks = list(reversed(bookmarks))
+    bookmarks_to_move = bookmarks[0:BATCH_SIZE]
+    for (i, b) in enumerate(bookmarks_to_move):
+        if not options.quiet:
+            print "moving (%d of %d): %s" % (i+1, len(bookmarks_to_move), b["title"].encode("utf-8"))
+        if not options.dry_run:
+            (response, data) = client.request(API_URL_PREFIX + MOVE_BOOKMARK, "POST", urllib.urlencode({
+                "bookmark_id": b["bookmark_id"],
+                "folder_id": new_folder_id
+                }))
+    
+    if not options.quiet:
+        print "%d bookmark(s) remaining in '%s' folder" % (len(bookmarks) - len(bookmarks_to_move), foldername)
+        print "done"
 
 ################################################################################
 
 if command == "emptyfolder":
-	
-	foldername = args[1]
-	
-	# get folders
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders = dict([(f["title"], f["folder_id"]) for f in folders])
-	folders["unread"] = "unread"
-	
-	# check specified folder exists
-	if foldername not in folders:
-		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
-		sys.exit(1)
-	
-	folder_id = folders[foldername]
-	
-	# get bookmarks in folder
-	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-		"limit": 500,
-		"folder_id": folder_id
-		}))
-	bookmarks = json.loads(data)
-	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
-	
-	# delete bookmarks
-	for (i, b) in enumerate(bookmarks):
-		print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
-		if not options.dry_run:
-			(response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
-				"bookmark_id": b["bookmark_id"]
-				}))
-	
-	print "done"
+    
+    foldername = args[1]
+    
+    # get folders
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folders = dict([(f["title"], f["folder_id"]) for f in folders])
+    folders["unread"] = "unread"
+    
+    # check specified folder exists
+    if foldername not in folders:
+        print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+        sys.exit(1)
+    
+    folder_id = folders[foldername]
+    
+    # get bookmarks in folder
+    (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+        "limit": 500,
+        "folder_id": folder_id
+        }))
+    bookmarks = json.loads(data)
+    bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+    
+    # delete bookmarks
+    for (i, b) in enumerate(bookmarks):
+        print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+        if not options.dry_run:
+            (response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
+                "bookmark_id": b["bookmark_id"]
+                }))
+    
+    print "done"
 
 ################################################################################
 
 if command == "wipefolder":
-	
-	foldername = args[1]
-	
-	# get folders
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	folders = dict([(f["title"], f["folder_id"]) for f in folders])
-	
-	# check specified folder exists
-	if foldername not in folders:
-		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
-		sys.exit(1)
-	
-	folder_id = folders[foldername]
-	
-	# get bookmarks in folder
-	(response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
-		"limit": 500,
-		"folder_id": folder_id
-		}))
-	bookmarks = json.loads(data)
-	bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
-	
-	# delete bookmarks
-	for (i, b) in enumerate(bookmarks):
-		print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
-		if not options.dry_run:
-			(response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
-				"bookmark_id": b["bookmark_id"]
-				}))
-	
-	# delete folder
-	print "deleting folder '%s'" % foldername
-	if not options.dry_run:
-		(response, data) = client.request(API_URL_PREFIX + DELETE_FOLDER, "POST", urllib.urlencode({
-			"folder_id": folder_id
-			}))
-	
-	print "done"
+    
+    foldername = args[1]
+    
+    # get folders
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    folders = dict([(f["title"], f["folder_id"]) for f in folders])
+    
+    # check specified folder exists
+    if foldername not in folders:
+        print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+        sys.exit(1)
+    
+    folder_id = folders[foldername]
+    
+    # get bookmarks in folder
+    (response, data) = client.request(API_URL_PREFIX + LIST_BOOKMARKS, "POST", urllib.urlencode({
+        "limit": 500,
+        "folder_id": folder_id
+        }))
+    bookmarks = json.loads(data)
+    bookmarks = [d for d in bookmarks if d["type"] == "bookmark"]
+    
+    # delete bookmarks
+    for (i, b) in enumerate(bookmarks):
+        print "deleting (%d of %d): %s" % (i+1, len(bookmarks), b["title"].encode("utf-8"))
+        if not options.dry_run:
+            (response, data) = client.request(API_URL_PREFIX + DELETE_BOOKMARK, "POST", urllib.urlencode({
+                "bookmark_id": b["bookmark_id"]
+                }))
+    
+    # delete folder
+    print "deleting folder '%s'" % foldername
+    if not options.dry_run:
+        (response, data) = client.request(API_URL_PREFIX + DELETE_FOLDER, "POST", urllib.urlencode({
+            "folder_id": folder_id
+            }))
+    
+    print "done"
 
 ################################################################################
 
 if command == "foldertotop":
-	
-	foldername = args[1]
-	
-	# get folders
-	(response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
-	folders = json.loads(data)
-	
-	# check specified folder exists
-	folder_names = [f["title"] for f in folders]
-	if foldername not in folder_names:
-		print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
-		sys.exit(1)
-	
-	# determine new position for each folder
-	order = []
-	folder_pos = 1
-	for f in folders:
-		folder_name = f["folder_id"]
-		position = f["position"]
-		if f["title"] == foldername:
-			position = 1
-		else:
-			folder_pos += 1
-			position = folder_pos
-		order.append((folder_name, position))
-	order = ["%d:%d" % p for p in order]
-	order = ",".join(order)
-	
-	# send the reorder request
-	if not options.dry_run:
-		(response, data) = client.request(API_URL_PREFIX + SET_FOLDER_ORDER, "POST", urllib.urlencode({
-			"order": order
-			}))
+    
+    foldername = args[1]
+    
+    # get folders
+    (response, data) = client.request(API_URL_PREFIX + LIST_FOLDERS, "POST")
+    folders = json.loads(data)
+    
+    # check specified folder exists
+    folder_names = [f["title"] for f in folders]
+    if foldername not in folder_names:
+        print >>sys.stderr, "%s: unknown folder '%s'" % (PROGRAM_NAME, foldername)
+        sys.exit(1)
+    
+    # determine new position for each folder
+    order = []
+    folder_pos = 1
+    for f in folders:
+        folder_name = f["folder_id"]
+        position = f["position"]
+        if f["title"] == foldername:
+            position = 1
+        else:
+            folder_pos += 1
+            position = folder_pos
+        order.append((folder_name, position))
+    order = ["%d:%d" % p for p in order]
+    order = ",".join(order)
+    
+    # send the reorder request
+    if not options.dry_run:
+        (response, data) = client.request(API_URL_PREFIX + SET_FOLDER_ORDER, "POST", urllib.urlencode({
+            "order": order
+            }))
 
 ################################################################################
 
 if command == "mkdir":
-	
-	folder_name = args[1]
-	
-	(response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
-		"title": folder_name,
-		}))
+    
+    folder_name = args[1]
+    
+    (response, data) = client.request(API_URL_PREFIX + ADD_FOLDER, "POST", urllib.urlencode({
+        "title": folder_name,
+        }))
