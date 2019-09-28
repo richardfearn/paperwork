@@ -1,4 +1,4 @@
-#! /usr/bin/python -tt
+#! /usr/bin/python3 -tt
 
 import sys
 from xml.dom import minidom
@@ -12,4 +12,4 @@ bookmark_elements = dom.getElementsByTagName("bookmark")
 bookmarks = map(get_url, bookmark_elements)
 
 for b in bookmarks:
-    print b.encode("utf-8")
+    print(b)
