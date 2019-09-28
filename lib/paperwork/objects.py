@@ -48,10 +48,11 @@ class Folder:
 
     """Represents an Instapaper folder."""
 
-    def __init__(self, folder_id=None, title=None, slug=None):
+    def __init__(self, folder_id=None, title=None, slug=None, position=None):
         self.id = folder_id  # pylint: disable=invalid-name
         self.title = title
         self.slug = slug
+        self.position = position
 
     def __repr__(self):
         return "Folder[id=%s, title=%s]" % (
@@ -67,7 +68,8 @@ class Folder:
         return Folder(
             folder_id=json["folder_id"],
             title=json["title"],
-            slug=json["slug"]
+            slug=json["slug"],
+            position=json["position"],
         )
 
 
