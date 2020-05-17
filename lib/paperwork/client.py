@@ -56,7 +56,7 @@ class Client:
         data = self._do_request(LIST_FOLDERS)
 
         data = [o for o in data if o["type"] == "folder"]
-        data = list(map(Folder.from_json, data))
+        data = [Folder.from_json(f) for f in data]
         return data
 
     def list_bookmarks(self, folder, limit=500):
@@ -69,7 +69,7 @@ class Client:
         })
 
         data = [o for o in data if o["type"] == "bookmark"]
-        data = list(map(Bookmark.from_json, data))
+        data = [Bookmark.from_json(b) for b in data]
         return data
 
     def move_bookmark(self, bookmark, folder):

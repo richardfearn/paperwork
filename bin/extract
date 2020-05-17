@@ -9,7 +9,7 @@ get_url = lambda e: e.getAttribute("url")
 
 dom = minidom.parse(filename)
 bookmark_elements = dom.getElementsByTagName("bookmark")
-bookmarks = map(get_url, bookmark_elements)
+bookmarks = [get_url(e) for e in bookmark_elements]
 
 for b in bookmarks:
     print(b)
