@@ -46,6 +46,8 @@ class Client:
             resource_owner_secret=self.config.token_secret(username),
         )
 
+        self.session = requests.Session()
+
         self.request_timeout = 5
         self.max_retries = 10
 
@@ -151,7 +153,7 @@ class Client:
                 LOGGER.debug("Attempt %d", attempt)
                 LOGGER.debug("Making request")
 
-                response = requests.post(
+                response = self.session.post(
                     url=full_url,
                     data=params,
                     auth=self.oauth,
